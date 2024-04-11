@@ -686,7 +686,7 @@ def seg_track_app():
         )
         
         #-------------- Input compont -------------
-        tab_video_input.select(
+        tab_video_input.select( # select: 只要选择到了就执行
             fn = clean,
             inputs=[],
             outputs=[
@@ -715,7 +715,7 @@ def seg_track_app():
         )
 
 
-        extract_button.click(
+        extract_button.click( # click: 点击再执行
             fn=get_meta_from_img_seq,
             inputs=[
                 input_img_seq

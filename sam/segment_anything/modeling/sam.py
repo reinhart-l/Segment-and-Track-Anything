@@ -160,15 +160,17 @@ class Sam(nn.Module):
         masks = masks[..., : input_size[0], : input_size[1]]
         masks = F.interpolate(masks, original_size, mode="bilinear", align_corners=False)
         return masks
-
+    #  归一化图像并将其填充为正方形
     def preprocess(self, x: torch.Tensor) -> torch.Tensor:
         """Normalize pixel values and pad to a square input."""
+        # 归一化, 均值和标准差已经定义好了, 至于为什么是这个哩, 猜测可能是整个数据集的
+        # pixel_mean=[123.675, 116.28, 103.53], pixel_std=[58.395, 57.12, 57.375]
         # Normalize colors
         x = (x - self.pixel_mean) / self.pixel_std
 
         # Pad
-        h, w = x.shape[-2:]
-        padh = self.image_encoder.img_size - h
-        padw = self.image_encoder.img_size - w
-        x = F.pad(x, (0, padw, 0, padh))
+        h, w = x.shape[-2:] # 输入图像大小 h=683, w=1024
+        padh = self.image_encoder.img_size - h # 1024-683=341
+        padw = self.image_encoder.img_size - w # 1024-1024=0
+        x = F.pad(x, (0, padw, 0, padh)) # 补零填充, x.size=[1, 3, 1024, 1024]
         return x

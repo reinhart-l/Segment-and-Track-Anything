@@ -53,10 +53,13 @@ class SamPredictor:
             image = image[..., ::-1]
 
         # Transform the image to the form expected by the model
-        input_image = self.transform.apply_image(image)
+        # 输入image: ndarray->(H, W, 3)=(1365, 2048, 3)
+        input_image = self.transform.apply_image(image)# 等比缩放图像至长边为1024
+        # 转换为tensor形式：input_image_torch: tensor->[683, 1024, 3]
         input_image_torch = torch.as_tensor(input_image, device=self.device)
+        # 通道调整：input_image_torch: tensor->[1, 3, 683, 1024]
         input_image_torch = input_image_torch.permute(2, 0, 1).contiguous()[None, :, :, :]
-
+        # 调用set_torch_image函数，传入参数input_image_torch与原始图像大小(1365, 2048)
         self.set_torch_image(input_image_torch, image.shape[:2])
 
     @torch.no_grad()
@@ -83,12 +86,13 @@ class SamPredictor:
         ), f"set_torch_image input must be BCHW with long side {self.model.image_encoder.img_size}."
         self.reset_image()
 
-        self.original_size = original_image_size
-        self.input_size = tuple(transformed_image.shape[-2:])
-        input_image = self.model.preprocess(transformed_image)
-        self.features = self.model.image_encoder(input_image)
+        self.original_size = original_image_size # 原始图像大小(H, W)=(1365, 2048)
+        self.input_size = tuple(transformed_image.shape[-2:]) # 输入图像大小(683, 1024)
+        # transformed_image.size():[1, 3, H*1024/W, 1024]————>归一化且填充到正方形
+        input_image = self.model.preprocess(transformed_image)# input_image.size():[1, 3, 1024, 1024]
+        self.features = self.model.image_encoder(input_image)# feature.size():[1, 256, 64, 64]
         self.is_image_set = True
-
+    # 使用给定的prompt，调用predict_torch，预测mask与iou
     def predict(
         self,
         point_coords: Optional[np.ndarray] = None,
@@ -135,6 +139,7 @@ class SamPredictor:
 
         # Transform input prompts
         coords_torch, labels_torch, box_torch, mask_input_torch = None, None, None, None
+        # 若prompt为point
         if point_coords is not None:
             assert (
                 point_labels is not None
@@ -143,10 +148,12 @@ class SamPredictor:
             coords_torch = torch.as_tensor(point_coords, dtype=torch.float, device=self.device)
             labels_torch = torch.as_tensor(point_labels, dtype=torch.int, device=self.device)
             coords_torch, labels_torch = coords_torch[None, :, :], labels_torch[None, :]
+        # 若prompt为box
         if box is not None:
             box = self.transform.apply_boxes(box, self.original_size)
             box_torch = torch.as_tensor(box, dtype=torch.float, device=self.device)
             box_torch = box_torch[None, :]
+        # 若prompt为mask
         if mask_input is not None:
             mask_input_torch = torch.as_tensor(mask_input, dtype=torch.float, device=self.device)
             mask_input_torch = mask_input_torch[None, :, :, :]

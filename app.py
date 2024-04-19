@@ -269,8 +269,8 @@ def sam_stroke(Seg_Tracker, origin_frame, drawing_board, aot_model, long_term_me
         Seg_Tracker, _ , _, _ = init_SegTracker(aot_model, long_term_mem, max_len_long_term, sam_gap, max_obj_num, points_per_side, origin_frame)
     
     print("Stroke")
-    mask = drawing_board["mask"]
-    bbox = mask2bbox(mask[:, :, 0])  # bbox: [[x0, y0], [x1, y1]]
+    mask = drawing_board["mask"]# 取出画笔的mask 因为前面tool="sketch" 所以这里是二进制mask
+    bbox = mask2bbox(mask[:, :, 0])  # bbox: [[x0, y0], [x1, y1]] # 将画笔的mask转换为bbox
     predicted_mask, masked_frame = Seg_Tracker.seg_acc_bbox(origin_frame, bbox)
 
     Seg_Tracker = SegTracker_add_first_frame(Seg_Tracker, origin_frame, predicted_mask)
@@ -300,7 +300,7 @@ def segment_everything(Seg_Tracker, aot_model, long_term_mem, max_len_long_term,
 
     frame_idx = 0
 
-    with torch.cuda.amp.autocast():
+    with torch.cuda.amp.autocast():# 提高在GPU上进行浮点运算的效率和速度
         pred_mask = Seg_Tracker.seg(origin_frame)
         torch.cuda.empty_cache()
         gc.collect()
@@ -324,9 +324,10 @@ def add_new_object(Seg_Tracker):
 def tracking_objects(Seg_Tracker, input_video, input_img_seq, fps, frame_num=0):
     print("Start tracking !")
     # pdb.set_trace()
-    # output_video, output_mask=tracking_objects_in_video(Seg_Tracker, input_video, input_img_seq, fps)
+    output_video, output_mask=tracking_objects_in_video(Seg_Tracker, input_video, input_img_seq, fps,frame_num)
     # pdb.set_trace()
-    return tracking_objects_in_video(Seg_Tracker, input_video, input_img_seq, fps, frame_num)
+    # return tracking_objects_in_video(Seg_Tracker, input_video, input_img_seq, fps, frame_num)
+    return output_video,output_mask
 
 
 def res_by_num(input_video, input_img_seq, frame_num):
@@ -687,7 +688,7 @@ def seg_track_app():
         
         #-------------- Input compont -------------
         tab_video_input.select( # select: 只要选择到了就执行
-            fn = clean,
+            fn = clean,# 这里的fn return是none,所以outputs其实是全部clean掉
             inputs=[],
             outputs=[
                 input_video,

@@ -73,14 +73,14 @@ class AOTTracker(object):
     @torch.no_grad()
     def track(self, image):
         output_height, output_width = image.shape[0], image.shape[1]
-        sample = {'current_img': image}
-        sample = self.transform(sample)
+        sample = {'current_img': image} # 创建一个字典 sample，其中包含原始图像
+        sample = self.transform(sample) # 进行预处理
         image = sample[0]['current_img'].unsqueeze(0).float().cuda(self.gpu_id)
         self.engine.match_propogate_one_frame(image)
-        pred_logit = self.engine.decode_current_logits((output_height, output_width))
+        pred_logit = self.engine.decode_current_logits((output_height, output_width)) #  获取模型的输出 这里的输出 pred_logit 是对每个像素的类别概率的原始预测，形状根据输出图像的高度和宽度调整
 
         # pred_prob = torch.softmax(pred_logit, dim=1)
-        pred_label = torch.argmax(pred_logit, dim=1,
+        pred_label = torch.argmax(pred_logit, dim=1, # 获取概率最高的类别的索引，这就是预测的标签
                                     keepdim=True).float()
 
         return  pred_label

@@ -67,7 +67,7 @@ class Detector:
         _, image_tensor = self.image_transform_grounding(img_pil)
         # img_pil = self.image_transform_grounding_for_vis(img_pil)
 
-        # run grounidng
+        # run grounding
         boxes, logits, phrases = predict(self.gd, image_tensor, grounding_caption, box_threshold, text_threshold, device=self.deivce)
         annotated_frame = annotate(image_source=np.asarray(img_pil), boxes=boxes, logits=logits, phrases=phrases)[:, :, ::-1]
         annotated_frame = cv2.resize(annotated_frame, (width, height), interpolation=cv2.INTER_LINEAR)

@@ -56,13 +56,16 @@ class Segmentor:
             'point_coords': coords,
             'point_modes': modes,
         }
+        # 从用户的点击信息直接推断出感兴趣区域的粗略掩模
         masks, scores, logits = self.interactive_predict(prompts, 'point', multimask)
+        # 从生成的多个掩模中，选择得分最高的掩模和逻辑值作为后续步骤的输入
         mask, logit = masks[np.argmax(scores)], logits[np.argmax(scores), :, :]
         prompts = {
             'point_coords': coords,
             'point_modes': modes,
             'mask_prompt': logit[None, :, :]
         }
+        # 使用先前步骤的logit作为mask_prompt 有助于在原始掩模的基础上进一步优化和调整
         masks, scores, logits = self.interactive_predict(prompts, 'point_mask', multimask)
         mask = masks[np.argmax(scores)]
 

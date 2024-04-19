@@ -42,6 +42,7 @@ class SegTracker():
             origin_merged_mask: numpy array (h,w)
         '''
         frame = frame[:, :, ::-1]
+        # 根据输入的帧生成预测。这些预测以注解列表的形式返回，每个注解包含有关单个对象的信息，如分割掩模和区域大小。
         anns = self.sam.everything_generator.generate(frame)
 
         # anns is a list recording all predictions in an image
